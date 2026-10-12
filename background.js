@@ -15,9 +15,7 @@ chrome.commands.onCommand.addListener((command) => {
   if (command === "toggle-popup") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id && tabs[0].url && !tabs[0].url.startsWith("chrome://")) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "TOGGLE_POPUP" }).catch(() => {
-          // Abaikan error jika content script belum siap/di-refresh
-        });
+        chrome.tabs.sendMessage(tabs[0].id, { action: "TOGGLE_POPUP" }).catch(() => {});
       }
     });
   }
@@ -26,19 +24,16 @@ chrome.commands.onCommand.addListener((command) => {
 async function captureAndAnalyze(tab) {
   if (!tab || !tab.id || !tab.url || tab.url.startsWith("chrome://")) return;
 
-  // Kirim sinyal loading dengan penanganan error jika content.js belum termuat
-  chrome.tabs.sendMessage(tab.id, { action: "SHOW_LOADING" }).catch(() => {
-    alert("Silakan REFRESH (F5) halaman web quiz Anda terlebih dahulu!");
-  });
+  // Kirim status loading
+  chrome.tabs.sendMessage(tab.id, { action: "SHOW_LOADING" }).catch(() => {});
 
-  // Tangkap screenshot halaman web aktif
-  chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 70 }, async (dataUrl) => {
+  // Ambil screenshot layar
+  chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 80 }, async (dataUrl) => {
     if (chrome.runtime.lastError || !dataUrl) {
       chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Gagal mengambil gambar layar." }).catch(() => {});
       return;
     }
 
-    // Ambil API Key dari storage
     chrome.storage.local.get(['geminiApiKey'], async (res) => {
       const apiKey = res.geminiApiKey;
       if (!apiKey) {
@@ -52,7 +47,7 @@ async function captureAndAnalyze(tab) {
       try {
         const base64Data = dataUrl.split(',')[1];
         
-        // Request ke API Gemini 1.5 Flash
+        // Panggil Gemini 1.5 Flash dengan prompt lebih fleksibel & akurat
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -60,7 +55,7 @@ async function captureAndAnalyze(tab) {
             contents: [{
               parts: [
                 {
-                  text: "Lihat gambar soal quiz ini. Berikan HANYA format jawaban singkat tanpa penjelasan sama sekali! Format wajib: 'Jawaban : [Huruf Pilihan/Jawaban]'. Contoh: 'Jawaban : A. Benda mati' atau 'Jawaban : C. 25'."
+                  text: "Selesaikan soal quiz yang terlihat pada gambar ini. Cari pertanyaan dan pilihan jawabannya. LANGSUNG BERIKAN JAWABAN BENAR DENGAN FORMAT PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Teks Jawaban]'. Tanpa penjelasan, tanpa kata pengantar lain."
                 },
                 {
                   inline_data: {
@@ -72,14 +67,26 @@ async function captureAndAnalyze(tab) {
             }],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 50
+              maxOutputTokens: 60
             }
           })
         });
 
         const result = await response.json();
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Jawaban tidak ditemukan.";
         
+        // Cek jika ada error dari API Gemini
+        if (result.error) {
+          chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "API Error: " + result.error.message }).catch(() => {});
+          return;
+        }
+
+        const candidate = result.candidates?.[0];
+        let text = candidate?.content?.parts?.[0]?.text?.trim();
+
+        if (!text) {
+          text = "Jawaban tidak ditemukan (Coba posisikan soal di tengah layar).";
+        }
+
         chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: text }).catch(() => {});
 
       } catch (err) {
