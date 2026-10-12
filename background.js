@@ -47,7 +47,7 @@ async function captureAndAnalyze(tab) {
       try {
         const base64Data = dataUrl.split(',')[1];
         
-        // MENGGUNAKAN MODEL GEMINI 3.8 FLASH
+        // PANGGIL MODEL GEMINI 3.8 FLASH
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -74,30 +74,9 @@ async function captureAndAnalyze(tab) {
 
         const result = await response.json();
         
-        // Jika model gemini-3.8-flash belum aktif di akun tertentu, fallback otomatis panggil model flash dasar
+        // Cek jika ada error dari API
         if (result.error) {
-          const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: "Selesaikan soal quiz di gambar ini. BERIKAN HANYA FORMAT JAWABAN PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Nilai/Teks Jawaban]'. Tanpa penjelasan." },
-                  { inline_data: { mime_type: "image/jpeg", data: base64Data } }
-                ]
-              }],
-              generationConfig: { temperature: 0.1, maxOutputTokens: 60 }
-            })
-          });
-          
-          const fallbackResult = await fallbackResponse.json();
-          if (fallbackResult.error) {
-            chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "API Error: " + fallbackResult.error.message }).catch(() => {});
-            return;
-          }
-          
-          const fallbackText = fallbackResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Jawaban tidak ditemukan.";
-          chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: fallbackText }).catch(() => {});
+          chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "API Error: " + result.error.message }).catch(() => {});
           return;
         }
 
