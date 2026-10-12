@@ -10,27 +10,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Listener shortcut keyboard (Ctrl+Shift+X) untuk toggle sembunyi/muncul
+// Listener shortcut keyboard (Ctrl+Shift+X)
 chrome.commands.onCommand.addListener((command) => {
   if (command === "toggle-popup") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "TOGGLE_POPUP" });
+      if (tabs[0]?.id && tabs[0].url && !tabs[0].url.startsWith("chrome://")) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "TOGGLE_POPUP" }).catch(() => {
+          // Abaikan error jika content script belum siap/di-refresh
+        });
       }
     });
   }
 });
 
 async function captureAndAnalyze(tab) {
-  if (!tab || !tab.id) return;
+  if (!tab || !tab.id || !tab.url || tab.url.startsWith("chrome://")) return;
 
-  // Beritahu content script bahwa proses scan dimulai
-  chrome.tabs.sendMessage(tab.id, { action: "SHOW_LOADING" });
+  // Kirim sinyal loading dengan penanganan error jika content.js belum termuat
+  chrome.tabs.sendMessage(tab.id, { action: "SHOW_LOADING" }).catch(() => {
+    alert("Silakan REFRESH (F5) halaman web quiz Anda terlebih dahulu!");
+  });
 
   // Tangkap screenshot halaman web aktif
   chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 70 }, async (dataUrl) => {
     if (chrome.runtime.lastError || !dataUrl) {
-      chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Gagal mengambil gambar layar." });
+      chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Gagal mengambil gambar layar." }).catch(() => {});
       return;
     }
 
@@ -41,14 +45,14 @@ async function captureAndAnalyze(tab) {
         chrome.tabs.sendMessage(tab.id, { 
           action: "SHOW_RESULT", 
           text: "API Key belum diisi! Klik kanan ikon extension > Options." 
-        });
+        }).catch(() => {});
         return;
       }
 
       try {
         const base64Data = dataUrl.split(',')[1];
         
-        // Request ke API Gemini 1.5 Flash (Ultra Fast Latency)
+        // Request ke API Gemini 1.5 Flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -76,10 +80,10 @@ async function captureAndAnalyze(tab) {
         const result = await response.json();
         const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Jawaban tidak ditemukan.";
         
-        chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: text });
+        chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: text }).catch(() => {});
 
       } catch (err) {
-        chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Error: " + err.message });
+        chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Error: " + err.message }).catch(() => {});
       }
     });
   });
