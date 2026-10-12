@@ -1,0 +1,61 @@
+/* Box Pop-up di Kanan Bawah Layar sesuai gambar (kotak merah & tulisan biru) */
+#ai-quiz-helper-box {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  width: 240px !important;
+  max-width: 90vw !important;
+  z-index: 999999999 !important;
+  background-color: rgba(15, 15, 20, 0.95) !important;
+  border: 2.5px solid #ef4444 !important; /* Border Kotak Merah */
+  border-radius: 8px !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  font-family: Arial, sans-serif !important;
+  overflow: hidden !important;
+}
+
+.ai-box-header {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  padding: 4px 8px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+}
+
+.ai-box-controls button {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+  color: white !important;
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+  border-radius: 3px !important;
+  cursor: pointer !important;
+  margin-left: 2px !important;
+}
+
+.ai-box-controls button:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+.ai-box-content {
+  padding: 10px !important;
+  max-height: 120px !important;
+  overflow-y: auto !important;
+}
+
+/* Tulisan Abstrak / Respon Biru Cepat */
+.ai-abstract-blue {
+  color: #38bdf8 !important; /* Biru terang / abstrak cyan */
+  font-size: 13px !important;
+  font-weight: bold !important;
+  line-height: 1.3 !important;
+  word-break: break-word !important;
+}
+
+.ai-loading {
+  color: #f39c12 !important;
+  font-style: italic !important;
+}
