@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Quiz AI Helper Fast",
+  "version": "1.0",
+  "description": "AI Quiz Solver dengan Floating Popup di Kanan Bawah",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "Quiz AI Helper"
+  }
+}
