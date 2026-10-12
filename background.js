@@ -1,25 +1,36 @@
-// Listener untuk shortcut keyboard atau klik icon extension
+// Listener klik icon extension
 chrome.action.onClicked.addListener((tab) => {
   captureAndAnalyze(tab);
 });
 
-// Jalankan tangkapan layar dan panggil AI Gemini
+// Listener pesan dari content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "CAPTURE_SCREEN") {
     captureAndAnalyze(sender.tab);
   }
 });
 
+// Listener shortcut keyboard (Ctrl+Shift+X) untuk toggle sembunyi/muncul
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "toggle-popup") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "TOGGLE_POPUP" });
+      }
+    });
+  }
+});
+
 async function captureAndAnalyze(tab) {
   if (!tab || !tab.id) return;
 
-  // Beritahu content script bahwa AI sedang memproses
+  // Beritahu content script bahwa proses scan dimulai
   chrome.tabs.sendMessage(tab.id, { action: "SHOW_LOADING" });
 
   // Tangkap screenshot halaman web aktif
   chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 70 }, async (dataUrl) => {
     if (chrome.runtime.lastError || !dataUrl) {
-      chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Gagal mengambil layar." });
+      chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Gagal mengambil gambar layar." });
       return;
     }
 
@@ -37,7 +48,7 @@ async function captureAndAnalyze(tab) {
       try {
         const base64Data = dataUrl.split(',')[1];
         
-        // Panggil API Gemini 1.5 Flash (Sangat Cepat & Responsif)
+        // Request ke API Gemini 1.5 Flash (Ultra Fast Latency)
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
