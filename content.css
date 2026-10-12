@@ -1,4 +1,4 @@
-/* Box Pop-up di Kanan Bawah Layar sesuai gambar (kotak merah & tulisan biru) */
+/* Box Pop-up Kanan Bawah - Putih Minimalis */
 #ai-quiz-helper-box {
   position: fixed !important;
   bottom: 20px !important;
@@ -6,49 +6,59 @@
   width: 240px !important;
   max-width: 90vw !important;
   z-index: 999999999 !important;
-  background-color: rgba(15, 15, 20, 0.95) !important;
-  border: 2.5px solid #ef4444 !important; /* Border Kotak Merah */
+  background-color: #ffffff !important; /* Latar Belakang Putih Terang */
+  border: 1.5px solid #d1d5db !important; /* Border Abu-abu Terang Soft */
   border-radius: 8px !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
   font-family: Arial, sans-serif !important;
   overflow: hidden !important;
+  transition: opacity 0.15s ease !important;
+}
+
+/* Hilang Total Tanpa Bekas & Tidak Mengalangi Klik */
+#ai-quiz-helper-box.ai-hidden {
+  display: none !important;
+  pointer-events: none !important;
 }
 
 .ai-box-header {
-  background-color: #ef4444 !important;
-  color: #ffffff !important;
-  padding: 4px 8px !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  padding: 6px 10px !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   font-size: 11px !important;
   font-weight: bold !important;
+  border-bottom: 1px solid #f3f4f6 !important;
 }
 
 .ai-box-controls button {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: none !important;
-  color: white !important;
-  padding: 2px 6px !important;
+  background: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  color: #000000 !important;
+  padding: 2px 7px !important;
   font-size: 10px !important;
-  border-radius: 3px !important;
+  border-radius: 4px !important;
   cursor: pointer !important;
   margin-left: 2px !important;
+  font-weight: bold !important;
 }
 
 .ai-box-controls button:hover {
-  background: rgba(255, 255, 255, 0.4) !important;
+  background: #e5e7eb !important;
 }
 
 .ai-box-content {
   padding: 10px !important;
   max-height: 120px !important;
   overflow-y: auto !important;
+  background-color: #ffffff !important;
 }
 
-/* Tulisan Abstrak / Respon Biru Cepat */
-.ai-abstract-blue {
-  color: #38bdf8 !important; /* Biru terang / abstrak cyan */
+/* Tulisan Hitam */
+.ai-text-black {
+  color: #000000 !important; /* Warna Teks Hitam Pekat */
   font-size: 13px !important;
   font-weight: bold !important;
   line-height: 1.3 !important;
@@ -56,6 +66,7 @@
 }
 
 .ai-loading {
-  color: #f39c12 !important;
+  color: #6b7280 !important;
   font-style: italic !important;
+  font-weight: normal !important;
 }
