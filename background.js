@@ -24,10 +24,8 @@ chrome.commands.onCommand.addListener((command) => {
 async function captureAndAnalyze(tab) {
   if (!tab || !tab.id || !tab.url || tab.url.startsWith("chrome://")) return;
 
-  // Kirim status loading
   chrome.tabs.sendMessage(tab.id, { action: "SHOW_LOADING" }).catch(() => {});
 
-  // Ambil screenshot layar
   chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 80 }, async (dataUrl) => {
     if (chrome.runtime.lastError || !dataUrl) {
       chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Gagal mengambil gambar layar." }).catch(() => {});
@@ -47,15 +45,15 @@ async function captureAndAnalyze(tab) {
       try {
         const base64Data = dataUrl.split(',')[1];
         
-        // MENGGUNAKAN ENDPOINT RESMI V1 GEMINI 1.5 FLASH
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // MENGGUNAKAN MODEL GEMINI 2.0 FLASH TERBARU
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{
               parts: [
                 {
-                  text: "Selesaikan soal quiz di gambar ini. BERIKAN HANYA FORMAT JAWABAN PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Nilai/Teks Jawaban]'. Tanpa penjelasan atau kata-kata tambahan."
+                  text: "Lihat gambar soal quiz ini. Cari pertanyaan dan pilihan jawabannya. LANGSUNG BERIKAN JAWABAN BENAR DENGAN FORMAT PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Nilai/Teks Jawaban]'. Tanpa penjelasan, tanpa kata pengantar lain."
                 },
                 {
                   inline_data: {
@@ -74,7 +72,6 @@ async function captureAndAnalyze(tab) {
 
         const result = await response.json();
         
-        // Cek jika ada error dari API
         if (result.error) {
           chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "API Error: " + result.error.message }).catch(() => {});
           return;
