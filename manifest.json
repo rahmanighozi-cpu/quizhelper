@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Quiz AI Helper Fast",
-  "version": "1.0",
-  "description": "AI Quiz Solver dengan Floating Popup di Kanan Bawah",
+  "version": "1.2",
+  "description": "AI Quiz Solver Fast Response dengan Floating Popup & Hide Total Shortcut",
   "permissions": [
     "activeTab",
     "scripting",
@@ -21,5 +21,14 @@
   "options_page": "options.html",
   "action": {
     "default_title": "Quiz AI Helper"
+  },
+  "commands": {
+    "toggle-popup": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+X",
+        "mac": "Command+Shift+X"
+      },
+      "description": "Sembunyikan Total atau Munculkan Pop-up Quiz AI"
+    }
   }
 }
