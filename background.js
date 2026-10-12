@@ -47,15 +47,15 @@ async function captureAndAnalyze(tab) {
       try {
         const base64Data = dataUrl.split(',')[1];
         
-        // Panggil Gemini 1.5 Flash menggunakan endpoint model terbaru
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+        // Panggil Endpoint Gemini dengan model gemini-1.5-flash resmi
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{
               parts: [
                 {
-                  text: "Selesaikan soal quiz yang terlihat pada gambar ini. Cari pertanyaan dan pilihan jawabannya. LANGSUNG BERIKAN JAWABAN BENAR DENGAN FORMAT PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Teks Jawaban]'. Tanpa penjelasan, tanpa kata pengantar lain."
+                  text: "Lihat gambar soal kuis ini. Hitung atau selesaikan soalnya. BERIKAN HANYA FORMAT JAWABAN PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Nilai/Teks Jawaban]'. Tanpa penjelasan atau kata-kata tambahan."
                 },
                 {
                   inline_data: {
@@ -74,7 +74,7 @@ async function captureAndAnalyze(tab) {
 
         const result = await response.json();
         
-        // Cek jika ada error dari API Gemini
+        // Cek jika ada error dari API
         if (result.error) {
           chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "API Error: " + result.error.message }).catch(() => {});
           return;
@@ -84,7 +84,7 @@ async function captureAndAnalyze(tab) {
         let text = candidate?.content?.parts?.[0]?.text?.trim();
 
         if (!text) {
-          text = "Jawaban tidak ditemukan (Coba posisikan soal di tengah layar).";
+          text = "Jawaban tidak ditemukan.";
         }
 
         chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: text }).catch(() => {});
