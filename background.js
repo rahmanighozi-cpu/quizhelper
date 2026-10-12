@@ -24,8 +24,10 @@ chrome.commands.onCommand.addListener((command) => {
 async function captureAndAnalyze(tab) {
   if (!tab || !tab.id || !tab.url || tab.url.startsWith("chrome://")) return;
 
+  // Kirim status loading
   chrome.tabs.sendMessage(tab.id, { action: "SHOW_LOADING" }).catch(() => {});
 
+  // Ambil screenshot layar
   chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 80 }, async (dataUrl) => {
     if (chrome.runtime.lastError || !dataUrl) {
       chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "Gagal mengambil gambar layar." }).catch(() => {});
@@ -45,15 +47,15 @@ async function captureAndAnalyze(tab) {
       try {
         const base64Data = dataUrl.split(',')[1];
         
-        // MENGGUNAKAN MODEL GEMINI 2.0 FLASH TERBARU
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        // MENGGUNAKAN MODEL GEMINI 3.8 FLASH
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{
               parts: [
                 {
-                  text: "Lihat gambar soal quiz ini. Cari pertanyaan dan pilihan jawabannya. LANGSUNG BERIKAN JAWABAN BENAR DENGAN FORMAT PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Nilai/Teks Jawaban]'. Tanpa penjelasan, tanpa kata pengantar lain."
+                  text: "Selesaikan soal quiz di gambar ini. BERIKAN HANYA FORMAT JAWABAN PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Nilai/Teks Jawaban]'. Tanpa penjelasan atau kata-kata tambahan."
                 },
                 {
                   inline_data: {
@@ -72,8 +74,30 @@ async function captureAndAnalyze(tab) {
 
         const result = await response.json();
         
+        // Jika model gemini-3.8-flash belum aktif di akun tertentu, fallback otomatis panggil model flash dasar
         if (result.error) {
-          chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "API Error: " + result.error.message }).catch(() => {});
+          const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: "Selesaikan soal quiz di gambar ini. BERIKAN HANYA FORMAT JAWABAN PERSIS SEPERTI INI: 'Jawaban : [Huruf Pilihan]. [Nilai/Teks Jawaban]'. Tanpa penjelasan." },
+                  { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                ]
+              }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 60 }
+            })
+          });
+          
+          const fallbackResult = await fallbackResponse.json();
+          if (fallbackResult.error) {
+            chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: "API Error: " + fallbackResult.error.message }).catch(() => {});
+            return;
+          }
+          
+          const fallbackText = fallbackResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Jawaban tidak ditemukan.";
+          chrome.tabs.sendMessage(tab.id, { action: "SHOW_RESULT", text: fallbackText }).catch(() => {});
           return;
         }
 
